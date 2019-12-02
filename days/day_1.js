@@ -1,5 +1,4 @@
 const parser = require('../inputParser.js');
-const fileName = 'day_1.txt'
 
 const fuelRequired = mass => Math.floor(mass / 3) - 2;
 
@@ -17,7 +16,8 @@ const fuelCounterUpper = (masses, calcFuel) =>
         0
     );
 
-const input = parser(fileName);
+const fileName = 'day_1.txt';
+const input = parser(fileName, '\n');
 //console.log(`v1: Fuel counter-Upper = ${fuelCounterUpper(input, fuelRequired)}`);
 console.log(`v2: Fuel counter-Upper = ${fuelCounterUpper(input, fuelRequiredRecursively)}`);
 
