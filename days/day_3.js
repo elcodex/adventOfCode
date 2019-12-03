@@ -26,7 +26,9 @@ const findIntersections = (wirePath1, wirePath2) => {
     const wirePoints1 = getPoints(wirePath1);
     const wirePoints2 = getPoints(wirePath2);
 
+    let stepsWire1 = 0;
     for (let i = 1; i < wirePoints1.length; i++) {
+        let stepsWire2 = 0;
         for (let j = 1; j < wirePoints2.length; j++) {
             if (wirePoints1[i-1].x === wirePoints1[i].x &&
                 wirePoints2[j-1].y === wirePoints2[j].y) {
@@ -41,7 +43,10 @@ const findIntersections = (wirePath1, wirePath2) => {
                         minX2 <= wirePoints1[i].x && wirePoints1[i].x <= maxX2) {
                             intersections.push({
                                 x: wirePoints1[i].x,
-                                y: wirePoints2[j].y
+                                y: wirePoints2[j].y,
+                                steps: stepsWire1 + stepsWire2 +
+                                    Math.abs(wirePoints2[j-1].x - wirePoints1[i].x) +
+                                    Math.abs(wirePoints1[i-1].y - wirePoints2[j].y)
                             });
                         }
             }
@@ -58,11 +63,18 @@ const findIntersections = (wirePath1, wirePath2) => {
                         minY2 <= wirePoints1[i].y && wirePoints1[i].y <= maxY2) {
                             intersections.push({
                                 x: wirePoints2[j].x,
-                                y: wirePoints1[i].y
+                                y: wirePoints1[i].y,
+                                steps: stepsWire1 + stepsWire2 +
+                                    Math.abs(wirePoints1[i-1].x - wirePoints2[j].x) +
+                                    Math.abs(wirePoints2[j-1].y - wirePoints1[i].y)
                             });
                         }
-            }   
+            }
+            stepsWire2 += Math.abs(wirePoints2[j-1].x - wirePoints2[j].x) + 
+                Math.abs(wirePoints2[j-1].y - wirePoints2[j].y);   
         }
+        stepsWire1 += Math.abs(wirePoints1[i-1].x - wirePoints1[i].x) +
+            Math.abs(wirePoints1[i-1].y - wirePoints1[i].y);
     }
     return intersections;
 }
@@ -82,9 +94,21 @@ const minDistance = points => {
     return distance;
 }
 
+const minSteps = points => {
+    if (points[0].x === 0 && points[0].y === 0) {
+        points.shift();
+    }
+    let steps = points[0].steps;
+    for (let i = 1; i < points.length; i++) {
+        steps = Math.min(steps, points[i].steps);
+    }
+    return steps;
+}
+
 const fileName = 'day_3.txt';
 const input = parser(fileName, '\n').map(line => line.split(','));
 
 console.log(minDistance(findIntersections(input[0], input[1])));
+console.log(minSteps(findIntersections(input[0], input[1])));
 
-module.exports = { findIntersections, minDistance }
+module.exports = { findIntersections, minDistance, minSteps }
