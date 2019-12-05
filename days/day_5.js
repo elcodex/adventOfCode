@@ -28,9 +28,12 @@ const readAddress = (mode, address) => {
     return undefined;
 }
 
-const readOperation = operation => {
-    while (operation.length < 5) {
+const readOperation = (operation, defaultMode) => {
+    while (operation.length < 2) {
         operation = '0' + operation;
+    }
+    while (operation.length < 5) {
+        operation = defaultMode + operation;
     }
     return {
         opcode: operation.substring(3),
@@ -39,7 +42,8 @@ const readOperation = operation => {
 }
 
 const getAddresses = (opcode, position) => {
-    if (opcode === INSTRUCTIONS.SUM || opcode === INSTRUCTIONS.MULTIPLY) {
+    if (opcode === INSTRUCTIONS.SUM || opcode === INSTRUCTIONS.MULTIPLY ||
+        opcode === INSTRUCTIONS.LESS_THAN || opcode === INSTRUCTIONS.EQUALS) {
         return {
             nextPosition: position + 4,
             addresses: memory.slice(position + 1, position + 4)
@@ -49,6 +53,13 @@ const getAddresses = (opcode, position) => {
         return {
             nextPosition: position + 2,
             addresses: memory.slice(position + 1, position + 2)
+        }
+    }
+    else if (opcode === INSTRUCTIONS.JUMP_IF_FALSE || 
+        opcode === INSTRUCTIONS.JUMP_IF_TRUE) {
+        return {
+            nextPosition: position + 3,
+            addresses: memory.slice(position + 1, position + 3)
         }
     }
     return {} //opcode === 99
@@ -75,8 +86,44 @@ const executeInstruction = ({opcode, modes, addresses, input}) => {
     else if (opcode === INSTRUCTIONS.OUTPUT) {
         return {
             halt: false,
-            output: memory[addresses[0]]
+            output: readAddress(modes[0], addresses[0])
         }
+    }
+    else if (opcode === INSTRUCTIONS.JUMP_IF_TRUE) {
+        if (readAddress(modes[0], addresses[0]) !== 0) {
+            return {
+                index: readAddress(modes[1], addresses[1]),
+                halt: false,
+            }
+        }
+        return {halt: false}
+    }
+    else if (opcode === INSTRUCTIONS.JUMP_IF_FALSE) {
+        if (readAddress(modes[0], addresses[0]) === 0) {
+            return {
+                index: readAddress(modes[1], addresses[1]),
+                halt: false,
+            }
+        }
+        return {halt: false}
+    }
+    else if (opcode === INSTRUCTIONS.LESS_THAN) {
+        if (readAddress(modes[0], addresses[0]) < readAddress(modes[1], addresses[1])) {
+            memory[addresses[2]] = 1;
+        } 
+        else {
+            memory[addresses[2]] = 0;
+        }
+        return {halt: false}
+    }
+    else if (opcode === INSTRUCTIONS.EQUALS) {
+        if (readAddress(modes[0], addresses[0]) === readAddress(modes[1], addresses[1])) {
+            memory[addresses[2]] = 1;
+        } 
+        else {
+            memory[addresses[2]] = 0;
+        }
+        return {halt: false}
     }
     else if (opcode === INSTRUCTIONS.HALT) {
         return {halt: true};
@@ -87,14 +134,14 @@ const executeInstruction = ({opcode, modes, addresses, input}) => {
     };
 }
 
-const intcodeProgram = (input) => {
+const intcodeProgram = (input, defaultMode) => {
     let instructionPosition = 0;
     let notHalt = true;
     let outputs = [];
     while (notHalt) {
-        const {opcode, modes} = readOperation(memory[instructionPosition].toString());
+        const {opcode, modes} = readOperation(memory[instructionPosition].toString(), defaultMode);
         const {nextPosition, addresses} = getAddresses(opcode, instructionPosition);
-        const {halt, error, output} = executeInstruction({opcode, modes, addresses, input});
+        const {halt, error, output, index} = executeInstruction({opcode, modes, addresses, input});
 
         if (error) {
             console.log(error);
@@ -105,7 +152,13 @@ const intcodeProgram = (input) => {
         }
 
         notHalt = !halt;
-        instructionPosition = nextPosition;
+
+        if (index !== undefined) {
+            instructionPosition = index;
+        }
+        else {
+            instructionPosition = nextPosition;
+        }
         if (instructionPosition >= memory.length) {
             console.log('infinite program');
             notHalt = false;
@@ -117,12 +170,12 @@ const intcodeProgram = (input) => {
 const fileName = 'day_5.txt';
 const input = parser(fileName, ',').map(value => parseInt(value));
 
-const runProgram = (programMemory) => {
+const runProgram = (programMemory, inputValue, defaultMode) => {
     memory = [...programMemory];
-    const outputs = intcodeProgram(1);
+    const outputs = intcodeProgram(inputValue, defaultMode);
     return {memory, outputs};
 }
 
-console.log(runProgram(input).outputs);
+console.log(runProgram(input, 5, MODES.BY_ADDRESS).outputs);
 
 module.exports = { runProgram }
