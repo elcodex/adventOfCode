@@ -78,7 +78,7 @@ const executeInstruction = ({opcode, modes, addresses, input}) => {
         return {halt: false};
     }
     else if (opcode === INSTRUCTIONS.INPUT) {
-        memory[addresses[0]] = input;
+        memory[addresses[0]] = input();
         return {
             halt: false
         }
@@ -167,15 +167,25 @@ const intcodeProgram = (input, defaultMode) => {
     return outputs;
 }
 
+const getInput = (inputValues) => {
+    let nextInputIndex = 0;
+    return () => {
+        const index = nextInputIndex;
+        nextInputIndex = (nextInputIndex + 1) % inputValues.length;
+        return inputValues[index];
+    }
+}
+
 const fileName = 'day_5.txt';
 const input = parser(fileName, ',').map(value => parseInt(value));
 
-const runProgram = (programMemory, inputValue, defaultMode) => {
+const runProgram = (programMemory, inputValues, defaultMode) => {
     memory = [...programMemory];
-    const outputs = intcodeProgram(inputValue, defaultMode);
+    const nextInput = getInput(inputValues);
+    const outputs = intcodeProgram(nextInput, defaultMode);
     return {memory, outputs};
 }
 
-console.log(runProgram(input, 5, MODES.BY_ADDRESS).outputs);
+console.log(runProgram(input, [5], MODES.BY_ADDRESS).outputs);
 
 module.exports = { runProgram }
