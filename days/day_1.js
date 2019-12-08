@@ -17,7 +17,7 @@ const fuelCounterUpper = (masses, calcFuel) =>
     );
 
 const fileName = 'day_1.txt';
-const input = parser(fileName, '\n');
+const input = parser(fileName, '\n').map(value => parseInt(value));
 //console.log(`v1: Fuel counter-Upper = ${fuelCounterUpper(input, fuelRequired)}`);
 console.log(`v2: Fuel counter-Upper = ${fuelCounterUpper(input, fuelRequiredRecursively)}`);
 
