@@ -7,8 +7,10 @@ const parser = (fileName, splitter) => {
         __dirname + '/' + rawDataFolder + '/' + fileName,
         {encoding: 'utf-8'}
     );
-    
-    return data.toString().trim().split(splitter);
+    if (splitter) {
+        return data.toString().trim().split(splitter);
+    }
+    return data.toString().trim();
 }
 
 module.exports = parser;
