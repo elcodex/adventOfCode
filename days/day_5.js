@@ -85,7 +85,14 @@ const executeInstruction = ({opcode, modes, addresses, input}) => {
         return {halt: false};
     }
     else if (opcode === INSTRUCTIONS.INPUT) {
-        memory[addresses[0]] = input();
+        const inputValue = input.shift();
+        if (inputValue === undefined) {
+            return {
+                stopCode: STOP_CODES.WAIT_FOR_INPUT,
+                halt: true
+            }
+        }
+        memory[addresses[0]] = inputValue;
         return {
             halt: false
         }
@@ -183,32 +190,27 @@ const intcodeProgram = (input, startPosition, defaultMode=MODES.BY_ADDRESS) => {
             instructionPosition = nextPosition;
         }
         if (instructionPosition >= memory.length) {
-            console.log('infinite program');
+            programStopCode = STOP_CODES.INFINITE;
             notHalt = false;
         }
     }
-    return outputs;
-}
-
-const getInput = (inputValues) => {
-    let nextInputIndex = 0;
-    return () => {
-        const index = nextInputIndex;
-        nextInputIndex = (nextInputIndex + 1) % inputValues.length;
-        return inputValues[index];
+    return {
+        outputs, 
+        programMemory: [...memory],
+        programStopCode,
+        programStopPosition
     }
 }
 
 const fileName = 'day_5.txt';
 const input = parser(fileName, ',').map(value => parseInt(value));
 
-const runProgram = (programMemory, inputValues, defaultMode) => {
+const runProgram = (programMemory, inputValues, startPosition, defaultMode) => {
     memory = [...programMemory];
-    const nextInput = getInput(inputValues);
-    const outputs = intcodeProgram(nextInput, defaultMode);
-    return {memory, outputs};
+    return intcodeProgram(inputValues, startPosition, defaultMode);
 }
 
-console.log(runProgram(input, [5], MODES.BY_ADDRESS).outputs);
+const run = runProgram(input, [1], 0, MODES.BY_ADDRESS);
+console.log(run.outputs, run.programStopCode);
 
-module.exports = { runProgram }
+module.exports = { runProgram, STOP_CODES }
