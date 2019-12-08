@@ -16,6 +16,13 @@ const MODES = {
     BY_VALUE: '1'
 }
 
+const STOP_CODES = {
+    TERMINATED: '99',
+    WAIT_FOR_INPUT: '3',
+    INFINITE: '999',
+    WRONG_INSTRUCTION: '0'
+}
+
 let memory = [];
 
 const readAddress = (mode, address) => {
@@ -126,22 +133,31 @@ const executeInstruction = ({opcode, modes, addresses, input}) => {
         return {halt: false}
     }
     else if (opcode === INSTRUCTIONS.HALT) {
-        return {halt: true};
+        return {
+            stopCode: STOP_CODES.TERMINATED,
+            halt: true
+        };
     }
     return {
-        halt: true, 
+        halt: true,
+        stopCode: STOP_CODES.WRONG_INSTRUCTION, 
         error: `the wrong opcode ${opcode}`
     };
 }
 
-const intcodeProgram = (input, defaultMode) => {
-    let instructionPosition = 0;
+const intcodeProgram = (input, startPosition, defaultMode=MODES.BY_ADDRESS) => {
+    let instructionPosition = startPosition;
     let notHalt = true;
     let outputs = [];
+
+    let programStopCode = undefined;
+    let programStopPosition = undefined;
+
     while (notHalt) {
         const {opcode, modes} = readOperation(memory[instructionPosition].toString(), defaultMode);
         const {nextPosition, addresses} = getAddresses(opcode, instructionPosition);
-        const {halt, error, output, index} = executeInstruction({opcode, modes, addresses, input});
+        const {halt, error, output, index, stopCode} = 
+            executeInstruction({opcode, modes, addresses, input});
 
         if (error) {
             console.log(error);
@@ -152,6 +168,13 @@ const intcodeProgram = (input, defaultMode) => {
         }
 
         notHalt = !halt;
+
+        if (stopCode) {
+            programStopCode = stopCode;
+        }
+        if (stopCode === STOP_CODES.WAIT_FOR_INPUT) {
+            programStopPosition = instructionPosition;
+        }
 
         if (index !== undefined) {
             instructionPosition = index;
