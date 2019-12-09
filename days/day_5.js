@@ -25,7 +25,7 @@ const STOP_CODES = {
     WRONG_INSTRUCTION: '0'
 }
 
-let memory = [];
+let memory = new Array(100000).fill(0);
 
 const readAddress = (mode, address, relativeBase) => {
     if (mode === MODES.BY_ADDRESS) {
@@ -227,7 +227,7 @@ const fileName = 'day_5.txt';
 const input = parser(fileName, ',').map(value => parseInt(value));
 
 const runProgram = (programMemory, inputValues, startPosition, defaultMode) => {
-    memory = [...programMemory];
+    programMemory.forEach((value, i) => memory[i] = value);
     return intcodeProgram(inputValues, startPosition, defaultMode);
 }
 
