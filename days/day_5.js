@@ -40,6 +40,16 @@ const readAddress = (mode, address, relativeBase) => {
     return undefined;
 }
 
+const writeAddress = (value, mode, address, relativeBase) => {
+    if (mode === MODES.BY_ADDRESS) {
+        memory[address] = value;
+    }
+    else if (mode === MODES.BY_ADDRESS_RELATIVELY) {
+        memory[relativeBase + address] = value;
+    }
+    return undefined;
+}
+
 const readOperation = (operation, defaultMode) => {
     while (operation.length < 2) {
         operation = '0' + operation;
@@ -81,15 +91,15 @@ const getAddresses = (opcode, position) => {
 const executeInstruction = (opcode, modes, addresses, input, relativeBase) => {
     
     if (opcode === INSTRUCTIONS.SUM) {
-        memory[addresses[2]] = 
-            readAddress(modes[0], addresses[0], relativeBase) + 
+        const sum = readAddress(modes[0], addresses[0], relativeBase) + 
             readAddress(modes[1], addresses[1], relativeBase);
+        writeAddress(sum, modes[2], addresses[2], relativeBase);
         return {halt: false};
     }
     else if (opcode === INSTRUCTIONS.MULTIPLY) {
-        memory[addresses[2]] = 
-            readAddress(modes[0], addresses[0], relativeBase) * 
+        const multiply = readAddress(modes[0], addresses[0], relativeBase) * 
             readAddress(modes[1], addresses[1], relativeBase);
+        writeAddress(multiply, modes[2], addresses[2], relativeBase);    
         return {halt: false};
     }
     else if (opcode === INSTRUCTIONS.INPUT) {
@@ -100,7 +110,7 @@ const executeInstruction = (opcode, modes, addresses, input, relativeBase) => {
                 halt: true
             }
         }
-        memory[readAddress(modes[0], addresses[0], relativeBase)] = inputValue;
+        writeAddress(inputValue, modes[0], addresses[0], relativeBase);
         return {
             halt: false
         }
@@ -132,27 +142,28 @@ const executeInstruction = (opcode, modes, addresses, input, relativeBase) => {
     else if (opcode === INSTRUCTIONS.LESS_THAN) {
         if (readAddress(modes[0], addresses[0], relativeBase) < 
             readAddress(modes[1], addresses[1], relativeBase)) {
-            memory[addresses[2]] = 1;
+                writeAddress(1, modes[2], addresses[2], relativeBase);
         } 
         else {
-            memory[addresses[2]] = 0;
+            writeAddress(0, modes[2], addresses[2], relativeBase);
         }
         return {halt: false}
     }
     else if (opcode === INSTRUCTIONS.EQUALS) {
         if (readAddress(modes[0], addresses[0], relativeBase) === 
             readAddress(modes[1], addresses[1], relativeBase)) {
-            memory[addresses[2]] = 1;
+                writeAddress(1, modes[2], addresses[2], relativeBase);
         } 
         else {
-            memory[addresses[2]] = 0;
+            writeAddress(0, modes[2], addresses[2], relativeBase);
         }
         return {halt: false}
     }
     else if (opcode === INSTRUCTIONS.ADJUST_RELATIVE_BASE) {
         return {
             halt: false,
-            relativeBase: relativeBase + addresses[0]
+            relativeBase: 
+                relativeBase + readAddress(modes[0], addresses[0], relativeBase)
         }
     }
     else if (opcode === INSTRUCTIONS.HALT) {
@@ -230,8 +241,8 @@ const runProgram = (programMemory, inputValues, startPosition, defaultMode) => {
     programMemory.forEach((value, i) => memory[i] = value);
     return intcodeProgram(inputValues, startPosition, defaultMode);
 }
-
+/*
 const run = runProgram(input, [1], 0, MODES.BY_ADDRESS);
 console.log(run.outputs, run.programStopCode);
-
+*/
 module.exports = { runProgram, STOP_CODES }
