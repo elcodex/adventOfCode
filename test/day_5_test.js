@@ -5,7 +5,7 @@ describe('part One', () => {
         const {programMemory, programStopCode} = runProgram([1,0,0,0,99], [1], 0, '0');
         const expectResult = [2,0,0,0,99];
 
-        expect(programMemory).toEqual(expectResult);
+        expect(programMemory.slice(0, expectResult.length)).toEqual(expectResult);
         expect(programStopCode).toBe(STOP_CODES.TERMINATED);
     });
 
@@ -13,7 +13,7 @@ describe('part One', () => {
         const {programMemory, programStopCode} = runProgram([2,3,0,3,99], [1], 0, '0');
         const expectResult = [2,3,0,6,99];
 
-        expect(programMemory).toEqual(expectResult);
+        expect(programMemory.slice(0, expectResult.length)).toEqual(expectResult);
         expect(programStopCode).toBe(STOP_CODES.TERMINATED);
     });
 
@@ -21,7 +21,7 @@ describe('part One', () => {
         const {programMemory, programStopCode} = runProgram([2,4,4,5,99,0], [1], 0, '0');
         const expectResult = [2,4,4,5,99,9801];
 
-        expect(programMemory).toEqual(expectResult);
+        expect(programMemory.slice(0, expectResult.length)).toEqual(expectResult);
         expect(programStopCode).toBe(STOP_CODES.TERMINATED);
     });
     
@@ -29,7 +29,7 @@ describe('part One', () => {
         const {programMemory, programStopCode} = runProgram([1,1,1,4,99,5,6,0,99], [1], 0, '0');
         const expectResult = [30,1,1,4,2,5,6,0,99];
 
-        expect(programMemory).toEqual(expectResult);
+        expect(programMemory.slice(0, expectResult.length)).toEqual(expectResult);
         expect(programStopCode).toBe(STOP_CODES.TERMINATED);
     });
 
