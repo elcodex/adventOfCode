@@ -8,12 +8,14 @@ const INSTRUCTIONS = {
     JUMP_IF_FALSE: '06',
     LESS_THAN: '07',
     EQUALS: '08',
+    ADJUST_RELATIVE_BASE: '09',
     HALT: '99'
 }
 
 const MODES = {
     BY_ADDRESS: '0',
-    BY_VALUE: '1'
+    BY_VALUE: '1',
+    BY_ADDRESS_RELATIVELY: '2'
 }
 
 const STOP_CODES = {
@@ -25,12 +27,15 @@ const STOP_CODES = {
 
 let memory = [];
 
-const readAddress = (mode, address) => {
+const readAddress = (mode, address, relativeBase) => {
     if (mode === MODES.BY_ADDRESS) {
         return memory[address];
     }
     else if (mode === MODES.BY_VALUE) {
         return address;
+    }
+    else if (mode === MODES.BY_ADDRESS_RELATIVELY) {
+        return memory[relativeBase + address];
     }
     return undefined;
 }
@@ -56,7 +61,8 @@ const getAddresses = (opcode, position) => {
             addresses: memory.slice(position + 1, position + 4)
         }
     }
-    else if (opcode === INSTRUCTIONS.INPUT || opcode === INSTRUCTIONS.OUTPUT) {
+    else if (opcode === INSTRUCTIONS.INPUT || opcode === INSTRUCTIONS.OUTPUT ||
+        opcode === INSTRUCTIONS.ADJUST_RELATIVE_BASE) {
         return {
             nextPosition: position + 2,
             addresses: memory.slice(position + 1, position + 2)
@@ -72,16 +78,18 @@ const getAddresses = (opcode, position) => {
     return {} //opcode === 99
 }
 
-const executeInstruction = ({opcode, modes, addresses, input}) => {
+const executeInstruction = (opcode, modes, addresses, input, relativeBase) => {
     
     if (opcode === INSTRUCTIONS.SUM) {
         memory[addresses[2]] = 
-            readAddress(modes[0], addresses[0]) + readAddress(modes[1], addresses[1]);
+            readAddress(modes[0], addresses[0], relativeBase) + 
+            readAddress(modes[1], addresses[1], relativeBase);
         return {halt: false};
     }
     else if (opcode === INSTRUCTIONS.MULTIPLY) {
         memory[addresses[2]] = 
-            readAddress(modes[0], addresses[0]) * readAddress(modes[1], addresses[1]);
+            readAddress(modes[0], addresses[0], relativeBase) * 
+            readAddress(modes[1], addresses[1], relativeBase);
         return {halt: false};
     }
     else if (opcode === INSTRUCTIONS.INPUT) {
@@ -92,7 +100,7 @@ const executeInstruction = ({opcode, modes, addresses, input}) => {
                 halt: true
             }
         }
-        memory[addresses[0]] = inputValue;
+        memory[readAddress(modes[0], addresses[0], relativeBase)] = inputValue;
         return {
             halt: false
         }
@@ -100,29 +108,30 @@ const executeInstruction = ({opcode, modes, addresses, input}) => {
     else if (opcode === INSTRUCTIONS.OUTPUT) {
         return {
             halt: false,
-            output: readAddress(modes[0], addresses[0])
+            output: readAddress(modes[0], addresses[0], relativeBase)
         }
     }
     else if (opcode === INSTRUCTIONS.JUMP_IF_TRUE) {
-        if (readAddress(modes[0], addresses[0]) !== 0) {
+        if (readAddress(modes[0], addresses[0], relativeBase) !== 0) {
             return {
-                index: readAddress(modes[1], addresses[1]),
+                index: readAddress(modes[1], addresses[1], relativeBase),
                 halt: false,
             }
         }
         return {halt: false}
     }
     else if (opcode === INSTRUCTIONS.JUMP_IF_FALSE) {
-        if (readAddress(modes[0], addresses[0]) === 0) {
+        if (readAddress(modes[0], addresses[0], relativeBase) === 0) {
             return {
-                index: readAddress(modes[1], addresses[1]),
+                index: readAddress(modes[1], addresses[1], relativeBase),
                 halt: false,
             }
         }
         return {halt: false}
     }
     else if (opcode === INSTRUCTIONS.LESS_THAN) {
-        if (readAddress(modes[0], addresses[0]) < readAddress(modes[1], addresses[1])) {
+        if (readAddress(modes[0], addresses[0], relativeBase) < 
+            readAddress(modes[1], addresses[1], relativeBase)) {
             memory[addresses[2]] = 1;
         } 
         else {
@@ -131,13 +140,20 @@ const executeInstruction = ({opcode, modes, addresses, input}) => {
         return {halt: false}
     }
     else if (opcode === INSTRUCTIONS.EQUALS) {
-        if (readAddress(modes[0], addresses[0]) === readAddress(modes[1], addresses[1])) {
+        if (readAddress(modes[0], addresses[0], relativeBase) === 
+            readAddress(modes[1], addresses[1], relativeBase)) {
             memory[addresses[2]] = 1;
         } 
         else {
             memory[addresses[2]] = 0;
         }
         return {halt: false}
+    }
+    else if (opcode === INSTRUCTIONS.ADJUST_RELATIVE_BASE) {
+        return {
+            halt: false,
+            relativeBase: relativeBase + addresses[0]
+        }
     }
     else if (opcode === INSTRUCTIONS.HALT) {
         return {
@@ -154,6 +170,7 @@ const executeInstruction = ({opcode, modes, addresses, input}) => {
 
 const intcodeProgram = (input, startPosition, defaultMode=MODES.BY_ADDRESS) => {
     let instructionPosition = startPosition;
+    let programRelativeBase = 0;
     let notHalt = true;
     let outputs = [];
 
@@ -162,9 +179,9 @@ const intcodeProgram = (input, startPosition, defaultMode=MODES.BY_ADDRESS) => {
 
     while (notHalt) {
         const {opcode, modes} = readOperation(memory[instructionPosition].toString(), defaultMode);
-        const {nextPosition, addresses} = getAddresses(opcode, instructionPosition);
-        const {halt, error, output, index, stopCode} = 
-            executeInstruction({opcode, modes, addresses, input});
+        const {nextPosition, addresses} = getAddresses(opcode, instructionPosition)
+        const {halt, error, output, index, stopCode, relativeBase} = 
+            executeInstruction(opcode, modes, addresses, input, programRelativeBase);
 
         if (error) {
             console.log(error);
@@ -192,6 +209,10 @@ const intcodeProgram = (input, startPosition, defaultMode=MODES.BY_ADDRESS) => {
         if (instructionPosition >= memory.length) {
             programStopCode = STOP_CODES.INFINITE;
             notHalt = false;
+        }
+
+        if (relativeBase) {
+            programRelativeBase = relativeBase;
         }
     }
     return {
