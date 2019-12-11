@@ -1,4 +1,3 @@
-const parser = require('../inputParser.js');
 const INSTRUCTIONS = {
     SUM: '01',
     MULTIPLY: '02',
@@ -234,15 +233,9 @@ const intcodeProgram = (input, startPosition, defaultMode=MODES.BY_ADDRESS) => {
     }
 }
 
-const fileName = 'day_5.txt';
-const input = parser(fileName, ',').map(value => parseInt(value));
-
 const runProgram = (programMemory, inputValues, startPosition, defaultMode) => {
     programMemory.forEach((value, i) => memory[i] = value);
     return intcodeProgram(inputValues, startPosition, defaultMode);
 }
-/*
-const run = runProgram(input, [1], 0, MODES.BY_ADDRESS);
-console.log(run.outputs, run.programStopCode);
-*/
-module.exports = { runProgram, STOP_CODES }
+
+module.exports = { runProgram, STOP_CODES, MODES }
