@@ -178,9 +178,9 @@ const executeInstruction = (opcode, modes, addresses, input, relativeBase) => {
     };
 }
 
-const intcodeProgram = (input, startPosition, defaultMode=MODES.BY_ADDRESS) => {
+const intcodeProgram = (input, startPosition, startRelativeBase, defaultMode=MODES.BY_ADDRESS) => {
     let instructionPosition = startPosition;
-    let programRelativeBase = 0;
+    let programRelativeBase = startRelativeBase;
     let notHalt = true;
     let outputs = [];
 
@@ -229,13 +229,14 @@ const intcodeProgram = (input, startPosition, defaultMode=MODES.BY_ADDRESS) => {
         outputs, 
         programMemory: [...memory],
         programStopCode,
-        programStopPosition
+        programStopPosition,
+        programRelativeBase
     }
 }
 
-const runProgram = (programMemory, inputValues, startPosition, defaultMode) => {
+const runProgram = (programMemory, inputValues, startPosition, startRelativeBase, defaultMode) => {
     programMemory.forEach((value, i) => memory[i] = value);
-    return intcodeProgram(inputValues, startPosition, defaultMode);
+    return intcodeProgram(inputValues, startPosition, startRelativeBase, defaultMode);
 }
 
 module.exports = { runProgram, STOP_CODES, MODES }
