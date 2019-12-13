@@ -1,11 +1,13 @@
 const parser = require('../inputParser.js');
-const intcodeComputer = require('./day_5.js');
+const intcodeComputer = require('./intcodeComputer.js');
 
 const amplificationCircuit = (input, phases) => {
     let amplifierInput = 0;
     for (let i = 0; i < 5; i++) {
         const outputs = 
-            intcodeComputer.runProgram(input, [phases[i], amplifierInput], 0, '0').outputs;
+            intcodeComputer
+            .runProgram(input, [phases[i], amplifierInput], 0, 0, intcodeComputer.MODES.BY_ADDRESS)
+            .outputs;
         amplifierInput = outputs[outputs.length-1];    
     }
     return amplifierInput;
@@ -27,7 +29,8 @@ const amplificationFeedbackLoopCircuit = (input, phases) => {
                     states[amplifier].memory || [...input],
                     states[amplifier].input,
                     states[amplifier].position || 0,
-                    '0');
+                    0,
+                    intcodeComputer.MODES.BY_ADDRESS);
             states[amplifier].outputs = [...result.outputs];
             states[amplifier].memory = result.programMemory;
             states[amplifier].stopCode = result.programStopCode;
@@ -74,7 +77,7 @@ const getMaxOutput = (input, from, to, amplifierProgram) => {
 const fileName ='day_7.txt';
 const input = parser(fileName, ',').map(value => parseInt(value));
 
-//console.log(getMaxOutput(input, 0, 4, amplificationCircuit));
+console.log(getMaxOutput(input, 0, 4, amplificationCircuit));
 console.log(getMaxOutput(input, 5, 9, amplificationFeedbackLoopCircuit));
 
 module.exports = { getMaxOutput, amplificationCircuit, amplificationFeedbackLoopCircuit };
